@@ -34,7 +34,7 @@ public:
         bool is_invert = false;       // 电机反转标志
         Angle<> offset;               // 电机角度偏移量
         bool is_limit = false;        // false-圆周模式，true-限位模式
-        Angle<> limit_min, limit_max; // min-右限位（负值），max-左限位（正值），相对于offset的角度
+        UnitFloat<> limit_min, limit_max; // min-右限位（负值），max-左限位（正值），相对于offset的角度
 
         // PID相关
         control_mode_e control_mode = OPEN_LOOP_MODE;    // 电机闭环模式
@@ -63,7 +63,7 @@ public:
 
     // 角度（减速比!=1时，自动执行软件多圈记数）
     struct {
-        Angle<deg> ref, measure;
+        UnitFloat<deg> ref, measure;
     } angle;
 
     // 温度
@@ -94,7 +94,7 @@ public:
     void SetSpeed(const UnitFloat<>& speed);
 
     // 设置角度
-    Angle<> SetAngle(const Angle<>& angle, const UnitFloat<>& speed_ff = 0 * default_unit);
+    UnitFloat<> SetAngle(const UnitFloat<>& angle, const UnitFloat<>& speed_ff = 0 * default_unit);
 
     // 需要在循环中调用
     virtual void OnLoop();
@@ -108,5 +108,6 @@ protected:
 private:
     PID speed_pid, angle_pid;       // PID控制器
     Angle<deg> last_angle;          // 用于多圈计数
+    bool multiturn_inited = false;  // 多圈计数是否已初始化
     bool is_first_setangle = false; // 断联/使能后第一次设置角度标志，防止电机一下子飞起来
 };

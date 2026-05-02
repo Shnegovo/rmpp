@@ -20,7 +20,7 @@ void Motor::SetSpeed(const UnitFloat<>& speed) {
     this->speed.ref = speed;
 }
 
-Angle<> Motor::SetAngle(const Angle<>& angle, const UnitFloat<>& speed_ff) {
+UnitFloat<> Motor::SetAngle(const UnitFloat<>& angle, const UnitFloat<>& speed_ff) {
     // 电机断联/失能，不断把当前角度设置为目标角度，防止电机一下子飞起来
     if (is_connect == false || is_enable == false) {
         this->angle.ref = this->angle.measure;
@@ -59,6 +59,7 @@ void Motor::OnLoop() {
     // 电机断联检测
     if (dwt_connect.GetDT() > config.timeout) {
         is_connect = false;
+        multiturn_inited = false;
     }
 
     // 电机断联/失能，清空PID
@@ -171,7 +172,14 @@ void Motor::callback(const raw_t& raw) {
 
     // 减速比!=1时，自动执行软件多圈记数
     if (config.reduction != 1.0f) {
-        angle.measure += Angle(correct_angle - last_angle) / config.reduction;
+        if (multiturn_inited) {
+            float diff = (correct_angle - last_angle).toFloat();
+            if (diff > PI) diff -= 2.0f * PI;
+            else if (diff <= -PI) diff += 2.0f * PI;
+            angle.measure += diff / config.reduction * rad;
+        } else {
+            multiturn_inited = true;
+        }
         last_angle = correct_angle;
     } else {
         angle.measure = correct_angle;
